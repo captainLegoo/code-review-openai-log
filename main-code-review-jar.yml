@@ -1,0 +1,76 @@
+name: OpenAI Code Review
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '8'
+
+      - name: build with maven
+        run: mvn clean install -DskipTests
+
+      - name: Copy openai-code-review-jdk JAR
+        run: mvn dependency:copy -Dartifact=cn.dcy.review:code-review-openai-sdk:1.0 -DoutputDirectory=./libs
+
+      - name: Get repo name
+        id: repo-name
+        run: echo "REPO_NAME=${GITHUB_REPOSITORY##*/}" >> $GITHUB_ENV
+
+      - name: Get branch name
+        id: branch-name
+        run: echo "BRANCH_NAME=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
+      - name: Get commit author
+        id: commit-author
+        run: echo "COMMIT_AUTHOR=$(git log -1 --pretty=format:'%an')" >> $GITHUB_ENV
+
+      - name: Get commit message
+        id: commit-message
+        run: echo "COMMIT_MESSAGE=$(git log -1 --pretty=format:'%s')" >> $GITHUB_ENV
+
+      - name: print repo name, branch name
+        run: |
+          echo "repo name = ${{ env.REPO_NAME }}"
+          echo "branch name = ${{ env.BRANCH_NAME }}"
+          echo "commit author = ${{ env.COMMIT_AUTHOR }}"
+          echo "commit message = ${{ env.COMMIT_MESSAGE }}"
+
+      - name: Run code review
+        run: java -jar ./libs/code-review-openai-sdk-1.0.jar
+        env:
+          # config of email (outlook)
+          # Make sure enable POP and IMAP 
+          # setting => Forwarding and IMAP => (Sign in) => POP and IMAP => Let devices and apps use POP/SMTP => ON
+          OUTLOOK_USERNAME: # outlook email e.g. aaabbb@outlook.com
+          OUTLOOK_PASSWORD: # outlook password
+          RECEIVER_EMAIL: # receiver email (can more than one) aaabbb@gmail.com,cccddd@gmail.com
+          # config of github
+          # The repository must have been initialized. e.g. https://github.com/captainLegoo/code-review-openai-log
+          GITHUB_REVIEW_LOG_URL: # github repo address
+          GITHUB_TOKEN: # github repo token
+          COMMIT_PROJECT: ${{ env.REPO_NAME }}
+          COMMIT_BRANCH: ${{ env.BRANCH_NAME }}
+          COMMIT_AUTHOR: ${{ env.COMMIT_AUTHOR }}
+          COMMIT_MESSAGE: ${{ env.COMMIT_MESSAGE }}
+          # config of openai
+          OPENAI_TYPE: CHATGPT
+          CHATGPT_API_HOST: https://api.openai.com/v1/chat/completions
+          CHATGPT_API_KEY: # ChatGPT API Token 
