@@ -23,6 +23,12 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '8'
+          
+      - name: Create libs directory
+        run: mkdir -p ./libs
+
+      - name: Download openai-code-review-jdk JAR
+        run: wget -O ./libs/code-review-openai-sdk-1.0.jar https://github.com/captainLegoo/code-review-openai-log/releases/download/v1.0/code-review-openai-sdk-1.0.jar
 
       - name: build with maven
         run: mvn clean install -DskipTests
