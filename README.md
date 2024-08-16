@@ -1,7 +1,7 @@
 # code-review-openai-log
 
 
-Set `main-code-review-jar.yml` in Actions 
+Set `main-code-review-jar.yml` in **Github Actions**
 and fill the 6 configurations in it
 
 - OUTLOOK_USERNAME: The username for the email account that will send notifications
